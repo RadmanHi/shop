@@ -47,6 +47,6 @@ public class Cart {
     @LastModifiedDate
     private Instant updatedAt;
 
-    @OneToMany(mappedBy = "basketId", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<CartItem> items = new ArrayList<>();
 }

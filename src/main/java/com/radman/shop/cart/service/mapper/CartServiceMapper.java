@@ -28,9 +28,11 @@ public interface CartServiceMapper {
     Cart toCart(String userId);
 
     @Mapping(target = "id", expression = "java(UUID.randomUUID().toString())")
-    @Mapping(target = "basketId", source = "cartId")
+    @Mapping(target = "cart", source = "cart")
+    @Mapping(target = "productId", source = "productId")
+    @Mapping(target = "quantity", source = "quantity")
     @Mapping(target = "checkoutPriceSnapshot", ignore = true)
-    CartItem toCartItem(String cartId, String productId, Integer quantity);
+    CartItem toCartItem(Cart cart, String productId, Integer quantity);
 
     ProductQuantityDto toProductQuantityDto(CartItem item);
 

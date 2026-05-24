@@ -51,7 +51,7 @@ public class CartServiceImpl implements CartService {
                 .filter(i -> i.getProductId().equals(model.productId()))
                 .findFirst()
                 .ifPresentOrElse(i -> i.setQuantity(i.getQuantity() + model.quantity()), () ->
-                        cart.getItems().add(mapper.toCartItem(cart.getId(), model.productId(), model.quantity())));
+                        cart.getItems().add(mapper.toCartItem(cart, model.productId(), model.quantity())));
         cartDao.save(cart);
 
         log.info("Item added. userId={}, productId={}", model.userId(), model.productId());
@@ -153,6 +153,7 @@ public class CartServiceImpl implements CartService {
 
         log.info("Payment result handled. userId={}, status={}", model.userId(), model.status());
     }
+
     private void createPriceSnapshots(Cart cart) throws BusinessException {
         Map<String, BigDecimal> prices = productService
                 .getPricesByProductIds(cart.getItems().stream().map(CartItem::getProductId).toList()).prices().stream()
