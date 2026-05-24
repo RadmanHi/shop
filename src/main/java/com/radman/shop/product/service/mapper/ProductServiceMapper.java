@@ -1,6 +1,8 @@
 package com.radman.shop.product.service.mapper;
 
 import com.radman.shop.product.model.Product;
+import com.radman.shop.product.service.model.ProductPriceDto;
+import com.radman.shop.product.service.model.ProductPricesResult;
 import com.radman.shop.product.service.model.ProductResult;
 import com.radman.shop.product.service.model.ProductsResult;
 import org.mapstruct.Mapper;
@@ -23,12 +25,22 @@ public interface ProductServiceMapper {
     )
     ProductResult toDto(Product product);
 
-
-
     @Mapping(target = "products", source = "content")
     @Mapping(target = "page", expression = "java(products.getNumber())")
     @Mapping(target = "size", expression = "java(products.getSize())")
     @Mapping(target = "totalElements", expression = "java(products.getTotalElements())")
     @Mapping(target = "totalPages", expression = "java(products.getTotalPages())")
     ProductsResult toProductsResult(Page<Product> products);
+
+
+    @Mapping(target = "productId", source = "id")
+    ProductPriceDto toPriceDto(Product product);
+
+    List<ProductPriceDto> toPriceDtos(List<Product> products);
+
+    default ProductPricesResult toPricesResult(List<Product> products) {
+        return new ProductPricesResult(
+                toPriceDtos(products)
+        );
+    }
 }
