@@ -5,20 +5,14 @@ import com.radman.shop.product.model.Product;
 import com.radman.shop.product.model.dao.ProductDao;
 import com.radman.shop.product.service.ProductService;
 import com.radman.shop.product.service.mapper.ProductServiceMapper;
-import com.radman.shop.product.service.model.ProductResult;
-import com.radman.shop.product.service.model.ProductQuantityDto;
-import com.radman.shop.product.service.model.ProductsResult;
-import com.radman.shop.product.service.model.UpdateProductStockModel;
+import com.radman.shop.product.service.model.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,9 +39,21 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public ProductPricesResult getPricesByProductIds(List<String> productIds) throws BusinessException {
+        log.info("Fetching prices. size={}", productIds.size());
+
+        List<Product> products = productDao.findAllById(productIds);
+        ensureAllProductsExist(new HashSet<>(productIds), products);
+
+        log.info("Fetched prices. size={}", products.size());
+        return mapper.toPricesResult(products);
+    }
+
+    @Override
     @Transactional
     public void reserveProducts(UpdateProductStockModel model) throws BusinessException {
-        log.info("Reserve products request. size={}", model.getProducts().size());
+        log.info("Reserve products request. size={}", model.products().size());
 
         updateStock(model, (product, qty) -> {
             int available = product.getTotalQuantity() - product.getReservedQuantity();
@@ -64,7 +70,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void releaseProducts(UpdateProductStockModel model) throws BusinessException {
-        log.info("Release products request. size={}", model.getProducts().size());
+        log.info("Release products request. size={}", model.products().size());
 
         updateStock(model, (product, qty) -> {
             if (product.getReservedQuantity() < qty)
@@ -79,7 +85,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void fulfillProducts(UpdateProductStockModel model) throws BusinessException {
-        log.info("Fulfill products request. size={}", model.getProducts().size());
+        log.info("Fulfill products request. size={}", model.products().size());
 
         updateStock(model, (product, qty) -> {
             if (product.getReservedQuantity() < qty)
@@ -93,10 +99,10 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private void updateStock(UpdateProductStockModel model, StockOperation operation) throws BusinessException {
-        Map<String, Integer> quantityByProductId = model.getProducts().stream()
+        Map<String, Integer> quantityByProductId = model.products().stream()
                 .collect(Collectors.toMap(
-                        ProductQuantityDto::getProductId,
-                        ProductQuantityDto::getQuantity,
+                        ProductQuantityDto::productId,
+                        ProductQuantityDto::quantity,
                         Integer::sum
                 ));
 

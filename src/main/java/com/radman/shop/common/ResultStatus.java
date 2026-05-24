@@ -16,7 +16,12 @@ public enum ResultStatus {
     PRODUCT_NOT_FOUND(5, "product.not.found"),
     INSUFFICIENT_STOCK(6, "product.insufficient.stock"),
     INVALID_STOCK_STATE(7, "product.invalid.stock.state"),
-    INVALID_QUANTITY(8, "product.invalid.quantity");
+    INVALID_QUANTITY(8, "product.invalid.quantity"),
+    CART_NOT_FOUND(9, "cart.not.found"),
+    CART_ITEM_NOT_FOUND(10, "cart.item.not.found"),
+    CART_ALREADY_IN_CHECKOUT(11, "cart.already.in.checkout"),
+    EMPTY_CART(12, "cart.empty"),
+    DUPLICATE_PRODUCT(17, "product.duplicate");
 
     private final String description;
 
