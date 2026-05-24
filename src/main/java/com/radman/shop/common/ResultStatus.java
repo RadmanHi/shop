@@ -8,12 +8,15 @@ import java.util.Properties;
 @Getter
 public enum ResultStatus {
 
-    SUCCESS(0, "success"), UNKNOWN(1, "unknown.error"), FAILURE(2, "failure"),
-    USER_DUPLICATE_USERNAME(3, "user.duplicate.username"), INVALID_PARAMETER(4, "core.invalid.parameter.exception"),
-    FORBIDDEN_REQUEST(5, "forbidden.request"),
-    GROUP_NOT_FOUND(5, "group.not.found"),
-    EXPENSE_NOT_FOUND(5, "expense.not.found"),
-    USER_NOT_FOUND(6, "user.not.found");
+    SUCCESS(0, "success"),
+    UNKNOWN(1, "unknown.error"),
+    FAILURE(2, "failure"),
+    INVALID_PARAMETER(3, "core.invalid.parameter.exception"),
+    FORBIDDEN_REQUEST(4, "forbidden.request"),
+    PRODUCT_NOT_FOUND(5, "product.not.found"),
+    INSUFFICIENT_STOCK(6, "product.insufficient.stock"),
+    INVALID_STOCK_STATE(7, "product.invalid.stock.state"),
+    INVALID_QUANTITY(8, "product.invalid.quantity");
 
     private final String description;
 
