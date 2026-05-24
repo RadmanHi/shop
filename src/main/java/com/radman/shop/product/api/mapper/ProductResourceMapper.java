@@ -2,7 +2,6 @@ package com.radman.shop.product.api.mapper;
 
 import com.radman.shop.common.ResultStatus;
 import com.radman.shop.product.api.model.response.GetAllProductsResponse;
-import com.radman.shop.product.api.model.response.ProductDto;
 import com.radman.shop.product.api.model.response.ProductResponse;
 import com.radman.shop.product.service.model.ProductResult;
 import com.radman.shop.product.service.model.ProductsResult;
@@ -20,13 +19,7 @@ public interface ProductResourceMapper {
     @Mapping(target = "result", expression = "java(ResultStatus.SUCCESS)")
     GetAllProductsResponse toGetAllProductsResponse(ProductsResult result);
 
-    @Mapping(target = "product", source = "product")
+    @Mapping(target = "product", source = ".")
     @Mapping(target = "result", expression = "java(ResultStatus.SUCCESS)")
-    ProductResponse toProductResponse(ProductResult product);
-
-    @Mapping(target = "id", source = "id")
-    @Mapping(target = "name", source = "name")
-    @Mapping(target = "price", source = "price")
-    @Mapping(target = "availableQuantity", expression = "java(product.getTotalQuantity() - product.getReservedQuantity())")
-    ProductDto toProductDto(ProductResult product);
+    ProductResponse toProductResponse(ProductResult result);
 }

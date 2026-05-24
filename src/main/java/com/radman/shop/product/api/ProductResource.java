@@ -36,7 +36,7 @@ public class ProductResource {
     ) {
         log.info("Getting products. page={}, size={}", page, size);
         ProductsResult result = productService.getAllProducts(page, size);
-        log.info("Retrieved {} products", result.getProducts().size());
+        log.info("Retrieved {} products", result.products().size());
         return ResponseEntity.ok(mapper.toGetAllProductsResponse(result));
     }
 

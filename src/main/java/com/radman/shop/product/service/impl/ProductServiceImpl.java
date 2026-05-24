@@ -35,7 +35,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductResult getProduct(String productId) throws ProductNotFoundException {
-        return mapper.toDto(findProduct(productId));
+        return mapper.toProductResult(findProduct(productId));
     }
 
     @Override
