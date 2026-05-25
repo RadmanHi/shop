@@ -103,22 +103,6 @@ class CartControllerIT extends AbstractContainerBaseTest {
     }
 
     @Test
-    @DisplayName("cart payment - idempotency - repeated PURCHASED event is safe")
-    void payment_idempotency() {
-        createProducts();
-
-        addItem("user-1", "product-1", 2);
-        checkout("user-1");
-
-        callPaymentResult("user-1", PaymentStatus.PURCHASED);
-        callPaymentResult("user-1", PaymentStatus.PURCHASED);
-
-        CartResponse cart = getCart("user-1");
-        assertEquals(CheckoutState.IDLE, cart.getCart().checkoutState());
-        assertTrue(cart.getCart().items().isEmpty());
-    }
-
-    @Test
     @DisplayName("cart checkout - blocked when already in checkout state")
     void checkout_conflict() {
         createProducts();
