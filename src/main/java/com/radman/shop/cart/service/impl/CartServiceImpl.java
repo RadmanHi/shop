@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -50,8 +51,11 @@ public class CartServiceImpl implements CartService {
         cart.getItems().stream()
                 .filter(i -> i.getProductId().equals(model.productId()))
                 .findFirst()
-                .ifPresentOrElse(i -> i.setQuantity(i.getQuantity() + model.quantity()), () ->
-                        cart.getItems().add(mapper.toCartItem(cart, model.productId(), model.quantity())));
+                .ifPresentOrElse(
+                        i -> i.setQuantity(i.getQuantity() + model.quantity()),
+                        () -> cart.getItems().add(mapper.toCartItem(cart, model.productId(), model.quantity()))
+                );
+
         cartDao.save(cart);
 
         log.info("Item added. userId={}, productId={}", model.userId(), model.productId());
@@ -151,7 +155,7 @@ public class CartServiceImpl implements CartService {
         try {
             productService.fulfillProducts(mapper.toStockModel(cart.getItems()));
         } catch (Exception e) {
-            log.warn("Fulfill failed, product will self-heal. userId={}", userId, e);
+            log.warn("Fulfill failed, product must self-heal. userId={}", userId, e);
         }
     }
 
@@ -159,14 +163,15 @@ public class CartServiceImpl implements CartService {
         try {
             productService.releaseProducts(mapper.toStockModel(cart.getItems()));
         } catch (Exception e) {
-            log.warn("Release failed, product will self-heal. userId={}", userId, e);
+            log.warn("Release failed, product must self-heal. userId={}", userId, e);
         }
     }
 
     private void createPriceSnapshots(Cart cart) throws BusinessException {
-        Map<String, BigDecimal> prices = productService
-                .getPricesByProductIds(cart.getItems().stream().map(CartItem::getProductId).toList()).prices().stream()
+        List<String> productIds = cart.getItems().stream().map(CartItem::getProductId).toList();
+        Map<String, BigDecimal> prices = productService.getPricesByProductIds(productIds).prices().stream()
                 .collect(Collectors.toMap(ProductPriceDto::productId, ProductPriceDto::price));
+
         for (CartItem item : cart.getItems()) {
             item.setCheckoutPriceSnapshot(Optional.ofNullable(prices.get(item.getProductId()))
                     .orElseThrow(() -> new ProductNotFoundException(item.getProductId())));
@@ -180,7 +185,6 @@ public class CartServiceImpl implements CartService {
         cart.setCheckoutExpiresAt(null);
         cart.getItems().forEach(item -> item.setCheckoutPriceSnapshot(null));
     }
-
 
     private void ensureNotInCheckout(Cart cart, String userId) throws CartAlreadyInCheckoutException {
         boolean isInCheckout = cart.getCheckoutState() == CheckoutState.CHECKOUT_IN_PROGRESS;
