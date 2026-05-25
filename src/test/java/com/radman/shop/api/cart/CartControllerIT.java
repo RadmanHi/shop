@@ -71,6 +71,23 @@ class CartControllerIT extends AbstractContainerBaseTest {
     }
 
     @Test
+    @DisplayName("completeCheckout - cart not in checkout - throws IllegalStateException")
+    void completeCheckout_cartNotInCheckout_throws() {
+        createProducts();
+        addItem("user-1", "product-1", 2);
+
+        PaymentResultRequest req = new PaymentResultRequest();
+        req.setStatus(PaymentStatus.PURCHASED);
+
+        client.post()
+                .uri("/api/v1/carts/payment-result")
+                .header("X-User-Id", "user-1")
+                .body(req)
+                .exchange()
+                .expectStatus().is4xxClientError();
+    }
+
+    @Test
     @DisplayName("cart checkout - timeout flow - releases stock and resets cart")
     void checkout_timeout_flow() {
         createProducts();

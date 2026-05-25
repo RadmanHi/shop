@@ -127,22 +127,18 @@ public class CartServiceImpl implements CartService {
         Cart cart = findCartForUpdate(model.userId());
         boolean wasInCheckout = cart.getCheckoutState() == CheckoutState.CHECKOUT_IN_PROGRESS;
         if (!wasInCheckout) {
-            log.warn("""
-                            [ANOMALY] Payment result received for cart not in checkout.
-                            Processing anyway to avoid stock leak.
-                            userId={}, status={}, cartState={}
-                            """,
-                    model.userId(), model.status(), cart.getCheckoutState()
+            throw new IllegalStateException("[CRITICAL] Cart not in checkout — stock state unknown, escalate immediately. " +
+                            "userId=" + model.userId() + ", status=" + model.status() + ", cartState=" + cart.getCheckoutState()
             );
         }
         switch (model.status()) {
             case PURCHASED -> {
-                if (wasInCheckout) fulfillSilently(cart, model.userId());
+                fulfillSilently(cart, model.userId());
                 cart.getItems().clear();
                 clearCheckout(cart);
             }
             case CANCELLED, TIMEOUT -> {
-                if (wasInCheckout) releaseSilently(cart, model.userId());
+                releaseSilently(cart, model.userId());
                 clearCheckout(cart);
             }
         }
