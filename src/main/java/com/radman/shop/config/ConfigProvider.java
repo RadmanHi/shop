@@ -17,7 +17,7 @@ public class ConfigProvider {
 
     public Duration getCheckoutTimeout() {
         return Duration.ofMinutes(
-                env.getRequiredProperty("cart.checkout.timeout.minutes", Long.class)
+                env.getRequiredProperty("shop.cart.checkout.timeout.minutes", Long.class)
         );
     }
 }
