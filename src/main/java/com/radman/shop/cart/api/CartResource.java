@@ -5,6 +5,7 @@ import com.radman.shop.cart.api.model.AddItemRequest;
 import com.radman.shop.cart.api.model.CartResponse;
 import com.radman.shop.cart.api.model.PaymentResultRequest;
 import com.radman.shop.cart.api.model.UpdateItemQuantityRequest;
+import com.radman.shop.cart.api.model.response.CheckoutResponse;
 import com.radman.shop.cart.service.CartService;
 import com.radman.shop.common.GeneralResponse;
 import com.radman.shop.common.exception.BusinessException;
@@ -61,10 +62,9 @@ public class CartResource {
 
     @Operation(summary = "Checkout cart", description = "Starts checkout flow for current user cart")
     @PostMapping(path = "/checkout", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GeneralResponse> checkout(@RequestHeader("X-User-Id") String userId) throws BusinessException {
+    public ResponseEntity<CheckoutResponse> checkout(@RequestHeader("X-User-Id") String userId) throws BusinessException {
         log.info("Checkout requested. userId={}", userId);
-        cartService.initiateCheckout(userId);
-        return ResponseEntity.ok(GeneralResponse.success());
+        return ResponseEntity.ok(mapper.toCheckoutResponse(cartService.initiateCheckout(userId)));
     }
 
     @Operation(summary = "Internal payment callback",

@@ -13,6 +13,7 @@ import com.radman.shop.product.service.ProductService;
 import com.radman.shop.product.service.model.ProductPriceDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,8 +36,8 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional(readOnly = true)
-    public CartResult getCart(String userId) throws BusinessException {
-        return mapper.toCartResult(findCart(userId));
+    public CartResult getCart(String userId) {
+        return cartDao.findByUserId(userId).map(mapper::toCartResult).orElseGet(() -> mapper.toEmptyCartResult(userId));
     }
 
     @Override
@@ -44,7 +45,7 @@ public class CartServiceImpl implements CartService {
     public void addItem(AddItemModel model) throws BusinessException {
         log.info("Adding item. userId={}, productId={}, quantity={}", model.userId(), model.productId(), model.quantity());
 
-        Cart cart = cartDao.findByUserId(model.userId()).orElseGet(() -> mapper.toCart(model.userId()));
+        Cart cart = getOrCreateCartForUpdate(model.userId());
         ensureNotInCheckout(cart, model.userId());
         productService.ensureSufficientStock(model.productId(), model.quantity());
 
@@ -97,7 +98,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public void initiateCheckout(String userId) throws BusinessException {
+    public CheckoutResult initiateCheckout(String userId) throws BusinessException {
         log.info("Initiating checkout. userId={}", userId);
 
         Cart cart = findCartForUpdate(userId);
@@ -109,15 +110,13 @@ public class CartServiceImpl implements CartService {
         createPriceSnapshots(cart);
         cartDao.save(cart);
         productService.reserveProducts(mapper.toStockModel(cart.getItems()));
+        BigDecimal total = calculateTotal(cart);
         /*
          * Planned payment flow:
-         *     paymentService.charge(calculateTotal(cart), userId);
-         *
-         * Payment handling is intentionally out of scope for this assignment.
-         * The payable amount is derived from immutable checkout price snapshots
-         * multiplied by item quantities.
+         *     paymentService.charge(total, userId)
          */
-        log.info("Checkout initiated. userId={}", userId);
+        List<CheckoutItemResult> items = cart.getItems().stream().map(mapper::toCheckoutItemResult).toList();
+        return mapper.toCheckoutResult(cart.getUserId(), cart.getCheckoutState(), cart.getCheckoutExpiresAt(), total, items);
     }
 
     @Override
@@ -167,6 +166,18 @@ public class CartServiceImpl implements CartService {
         }
     }
 
+    private Cart getOrCreateCartForUpdate(String userId) {
+        return cartDao.findByUserIdForUpdate(userId)
+                .orElseGet(() -> {
+                    try {
+                        return cartDao.saveAndFlush(mapper.toCart(userId));
+                    } catch (DataIntegrityViolationException e) {
+                        return cartDao.findByUserIdForUpdate(userId)
+                                .orElseThrow(() -> new IllegalStateException("Cart should exist after concurrent creation", e));
+                    }
+                });
+    }
+
     private void createPriceSnapshots(Cart cart) throws BusinessException {
         List<String> productIds = cart.getItems().stream().map(CartItem::getProductId).toList();
         Map<String, BigDecimal> prices = productService.getPricesByProductIds(productIds).prices().stream()
@@ -190,7 +201,8 @@ public class CartServiceImpl implements CartService {
         boolean isInCheckout = cart.getCheckoutState() == CheckoutState.CHECKOUT_IN_PROGRESS;
         boolean isExpired = cart.getCheckoutExpiresAt() != null && Instant.now().isAfter(cart.getCheckoutExpiresAt());
         if (isInCheckout && isExpired) {
-            log.info("Checkout expired at read time, clearing. userId={}", userId);
+            log.info("Checkout expired before timeout job execution, clearing. userId={}", userId);
+            releaseSilently(cart, userId);
             clearCheckout(cart);
             cartDao.save(cart);
             return;
@@ -205,11 +217,13 @@ public class CartServiceImpl implements CartService {
                 .orElseThrow(() -> new CartItemNotFoundException(productId));
     }
 
-    private Cart findCart(String userId) throws CartNotFoundException {
-        return cartDao.findByUserId(userId).orElseThrow(() -> new CartNotFoundException(userId));
-    }
-
     private Cart findCartForUpdate(String userId) throws CartNotFoundException {
         return cartDao.findByUserIdForUpdate(userId).orElseThrow(() -> new CartNotFoundException(userId));
+    }
+
+    private BigDecimal calculateTotal(Cart cart) {
+        return cart.getItems().stream()
+                .map(i -> i.getCheckoutPriceSnapshot().multiply(BigDecimal.valueOf(i.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

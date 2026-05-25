@@ -2,6 +2,9 @@ package com.radman.shop.api.cart;
 
 import com.radman.shop.AbstractContainerBaseTest;
 import com.radman.shop.cart.api.model.*;
+import com.radman.shop.cart.api.model.response.CheckoutDto;
+import com.radman.shop.cart.api.model.response.CheckoutItemDto;
+import com.radman.shop.cart.api.model.response.CheckoutResponse;
 import com.radman.shop.cart.model.Cart;
 import com.radman.shop.cart.model.CheckoutState;
 import com.radman.shop.cart.model.dao.CartDao;
@@ -18,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -557,6 +561,88 @@ class CartControllerIT extends AbstractContainerBaseTest {
         );
     }
 
+    @Test
+    @DisplayName("expired checkout cleared during mutation releases reserved stock")
+    void expired_checkout_during_mutation_releases_stock() {
+        createProducts();
+
+        addItem("user-1", "product-1", 2);
+
+        checkout("user-1");
+
+        Product product1 = productDao.findById("product-1").orElseThrow();
+        assertEquals(2, product1.getReservedQuantity());
+
+        Cart cart = cartDao.findByUserId("user-1").orElseThrow();
+        cart.setCheckoutExpiresAt(Instant.now().minusSeconds(60));
+        cartDao.saveAndFlush(cart);
+
+        updateItemQuantity("user-1", "product-1", 1);
+
+        Product product2 = productDao.findById("product-1").orElseThrow();
+
+        assertEquals(0, product2.getReservedQuantity());
+        assertEquals(10, product2.getTotalQuantity());
+
+        CartResponse cartResponse = getCart("user-1");
+
+        assertEquals(CheckoutState.IDLE, cartResponse.getCart().checkoutState());
+        assertEquals(1, cartResponse.getCart().items().size());
+        assertEquals(1, cartResponse.getCart().items().getFirst().quantity());
+        assertNull(cartResponse.getCart().items().getFirst().checkoutPriceSnapshot());
+    }
+
+    @Test
+    @DisplayName("get cart - does not create cart in DB for empty view")
+    void get_cart_does_not_create_persistence_entry() {
+        String userId = "user-no-persist";
+
+        getCart(userId);
+
+        Optional<Cart> cart = cartDao.findByUserId(userId);
+
+        assertTrue(cart.isEmpty(), "Cart should NOT be created on GET");
+    }
+
+    @Test
+    @DisplayName("checkout - initiate flow - should snapshot prices, reserve stock and return summary")
+    void initiate_checkout_success() {
+
+        createProducts();
+
+        addItem("user-1", "product-1", 2);
+
+        CheckoutResponse response = checkout("user-1");
+
+        assertNotNull(response);
+
+        CheckoutDto checkout = response.getCheckout();
+
+        assertEquals("user-1", checkout.userId());
+        assertNotNull(checkout.expiresAt());
+
+        // ✔ total validation
+        BigDecimal expectedTotal = BigDecimal.valueOf(1000).multiply(BigDecimal.valueOf(2));
+        assertEquals(0, expectedTotal.compareTo(checkout.totalAmount()));
+
+        // ✔ items validation
+        assertEquals(1, checkout.items().size());
+
+        CheckoutItemDto item = checkout.items().getFirst();
+
+        assertEquals("product-1", item.productId());
+        assertEquals(2, item.quantity());
+
+        assertEquals(0, BigDecimal.valueOf(1000).compareTo(item.unitPrice()));
+
+        BigDecimal expectedSubtotal = BigDecimal.valueOf(2000);
+        assertEquals(0, expectedSubtotal.compareTo(item.subtotal()));
+
+        // ✔ cart state should be persisted
+        CartResponse cart = getCart("user-1");
+        assertEquals(CheckoutState.CHECKOUT_IN_PROGRESS, cart.getCart().checkoutState());
+    }
+
     private void addItem(String userId, String productId, int qty) {
         AddItemRequest req = new AddItemRequest();
         req.setProductId(productId);
@@ -590,12 +676,15 @@ class CartControllerIT extends AbstractContainerBaseTest {
                 .expectStatus().isOk();
     }
 
-    private void checkout(String userId) {
-        client.post()
+    private CheckoutResponse checkout(String userId) {
+        return client.post()
                 .uri("/api/v1/carts/checkout")
                 .header("X-User-Id", userId)
                 .exchange()
-                .expectStatus().isOk();
+                .expectStatus().isOk()
+                .expectBody(CheckoutResponse.class)
+                .returnResult()
+                .getResponseBody();
     }
 
     private void checkoutFailure(String userId) {

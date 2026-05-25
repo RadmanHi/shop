@@ -1,6 +1,9 @@
 package com.radman.shop.cart.api.mapper;
 
 import com.radman.shop.cart.api.model.*;
+import com.radman.shop.cart.api.model.response.CheckoutDto;
+import com.radman.shop.cart.api.model.response.CheckoutItemDto;
+import com.radman.shop.cart.api.model.response.CheckoutResponse;
 import com.radman.shop.cart.service.model.*;
 import com.radman.shop.common.ResultStatus;
 import org.mapstruct.Mapper;
@@ -62,4 +65,11 @@ public interface CartResourceMapper {
     @Mapping(target = "quantity", source = "quantity")
     @Mapping(target = "checkoutPriceSnapshot", source = "checkoutPriceSnapshot")
     CartItemDto toCartItemDto(CartItemResult item);
+
+    @Mapping(target = "checkout", source = ".")
+    CheckoutResponse toCheckoutResponse(CheckoutResult result);
+
+    CheckoutDto toCheckoutDto(CheckoutResult result);
+
+    CheckoutItemDto toCheckoutItemDto(CheckoutItemResult item);
 }

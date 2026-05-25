@@ -5,7 +5,7 @@ import com.radman.shop.common.exception.BusinessException;
 
 public interface CartService {
 
-    CartResult getCart(String userId) throws BusinessException;
+    CartResult getCart(String userId);
 
     void addItem(AddItemModel model) throws BusinessException;
 
@@ -13,7 +13,7 @@ public interface CartService {
 
     void removeItem(RemoveItemModel model) throws BusinessException;
 
-    void initiateCheckout(String userId) throws BusinessException;
+    CheckoutResult initiateCheckout(String userId) throws BusinessException;
 
     void completeCheckout(PaymentResultModel model) throws BusinessException;
 }
