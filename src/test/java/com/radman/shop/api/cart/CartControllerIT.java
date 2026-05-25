@@ -63,7 +63,7 @@ class CartControllerIT extends AbstractContainerBaseTest {
         CartResponse cart2 = getCart("user-1");
         assertEquals(CheckoutState.CHECKOUT_IN_PROGRESS, cart2.getCart().checkoutState());
 
-        payment("user-1", PaymentStatus.PURCHASED);
+        callPaymentResult("user-1", PaymentStatus.PURCHASED);
 
         CartResponse cart3 = getCart("user-1");
         assertEquals(CheckoutState.IDLE, cart3.getCart().checkoutState());
@@ -78,7 +78,7 @@ class CartControllerIT extends AbstractContainerBaseTest {
         addItem("user-1", "product-1", 2);
         checkout("user-1");
 
-        payment("user-1", PaymentStatus.TIMEOUT);
+        callPaymentResult("user-1", PaymentStatus.TIMEOUT);
 
         CartResponse cart = getCart("user-1");
         assertEquals(CheckoutState.IDLE, cart.getCart().checkoutState());
@@ -93,8 +93,8 @@ class CartControllerIT extends AbstractContainerBaseTest {
         addItem("user-1", "product-1", 2);
         checkout("user-1");
 
-        payment("user-1", PaymentStatus.PURCHASED);
-        payment("user-1", PaymentStatus.PURCHASED);
+        callPaymentResult("user-1", PaymentStatus.PURCHASED);
+        callPaymentResult("user-1", PaymentStatus.PURCHASED);
 
         CartResponse cart = getCart("user-1");
         assertEquals(CheckoutState.IDLE, cart.getCart().checkoutState());
@@ -371,7 +371,7 @@ class CartControllerIT extends AbstractContainerBaseTest {
         for (int i = 0; i < threads; i++) {
             executor.submit(() -> {
                 try {
-                    payment("user-1", PaymentStatus.PURCHASED);
+                    callPaymentResult("user-1", PaymentStatus.PURCHASED);
                 } finally {
                     latch.countDown();
                 }
@@ -542,7 +542,7 @@ class CartControllerIT extends AbstractContainerBaseTest {
 
         executor.submit(() -> {
             try {
-                payment("user-1", PaymentStatus.PURCHASED);
+                callPaymentResult("user-1", PaymentStatus.PURCHASED);
             } finally {
                 latch.countDown();
             }
@@ -694,7 +694,7 @@ class CartControllerIT extends AbstractContainerBaseTest {
                 .exchange();
     }
 
-    private void payment(String userId, PaymentStatus status) {
+    private void callPaymentResult(String userId, PaymentStatus status) {
         PaymentResultRequest req = new PaymentResultRequest();
         req.setStatus(status);
 
