@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @Validated
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/cart")
+@RequestMapping("/api/v1/carts")
 public class CartResource {
 
     private final CartService cartService;
