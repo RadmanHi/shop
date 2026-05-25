@@ -1,15 +1,12 @@
-# 🛒 Shop API
-
+# Shop API
 A backend service simulating a real-world e-commerce cart system, built with Spring Boot and PostgreSQL.
 
-> ### 🔗 Full source code available on the [`develop`](https://github.com/RadmanHi/shop/tree/develop) branch
+> ### Full source code available on the [`develop`](https://github.com/RadmanHi/shop/tree/develop) branch
 
 ---
 
-## ⚡ Quick Start
-
+## Quick Start
 **Prerequisites:** Docker and Docker Compose.
-
 ```bash
 git clone -b develop https://github.com/RadmanHi/shop.git
 cd shop
@@ -18,17 +15,16 @@ docker compose up --build
 
 | | |
 |---|---|
-| 🌐 API | http://localhost:8080 |
-| 📖 Swagger | http://localhost:8080/swagger-ui/index.html |
-| ❤️ Health | http://localhost:8080/actuator/health |
+| API | http://localhost:8080 |
+| Swagger | http://localhost:8080/swagger-ui/index.html |
+| Health | http://localhost:8080/actuator/health |
 
-> 🌱 Runs with the `dev` profile by default — sample products and a test user are seeded automatically.
+> Runs with the `dev` profile by default — sample products and a test user are seeded automatically.
 > Use `X-User-Id: user-1` in any cart request to get started immediately.
 
 ---
 
-## ✏️ Tech Stack
-
+## Tech Stack
 | Layer | Technology |
 |---|---|
 | Runtime | Java 25, Spring Boot 4.0.6 |
@@ -40,8 +36,7 @@ docker compose up --build
 
 ---
 
-## ⚙️ Configuration
-
+## Configuration
 All values have sensible defaults for local development.
 
 | Property | Default | Description |
@@ -53,7 +48,7 @@ All values have sensible defaults for local development.
 
 ---
 
-## 🗺️ API Overview
+## API Overview
 
 ### Products
 | Method | Endpoint | Description |
@@ -71,12 +66,11 @@ All values have sensible defaults for local development.
 | PATCH | `/api/v1/carts/items/{productId}` | Update quantity |
 | DELETE | `/api/v1/carts/items/{productId}` | Remove item |
 | POST | `/api/v1/carts/checkout` | Initiate checkout |
-| POST | `/api/v1/carts/payment-result` | Submit payment result ⚠️ internal use only |
+| POST | `/api/v1/carts/payment-result` | Submit payment result (internal use only) |
 
 ---
 
-## 🔄 Checkout Flow
-
+## Checkout Flow
 ```
 Add Items → Initiate Checkout → [Payment Service — out of scope] → PURCHASED / CANCELLED / TIMEOUT
 ```
@@ -85,25 +79,30 @@ Add Items → Initiate Checkout → [Payment Service — out of scope] → PURCH
 
 | # | What happens | Why it matters |
 |---|---|---|
-| 🔒 | Prices are snapshotted at checkout | Cart prices are frozen at the moment of checkout — admin price changes don't affect an in-progress session |
-| 📦 | Stock is reserved at checkout | No two users can claim the same last item |
-| 🔁 | Cancellation or timeout releases stock | Nothing stays reserved indefinitely |
-| 🛡️ | Payment results honored even on state mismatch | Stock never leaks due to unexpected edge cases |
-| ⏱️ | Expired checkouts self-recover | Users are never permanently stuck — a background job runs every minute to clean up, with inline recovery as a safety net |
-| 🔀 | Concurrent requests are safe | Multiple requests hitting the same cart or stock simultaneously are handled gracefully — no data corruption, no overselling |
+| 1 | Prices are snapshotted at checkout | Cart prices are frozen at the moment of checkout — admin price changes don't affect an in-progress session |
+| 2 | Stock is reserved at checkout | No two users can claim the same last item |
+| 3 | Cancellation or timeout releases stock | Nothing stays reserved indefinitely |
+| 4 | Payment results honored even on state mismatch | Stock never leaks due to unexpected edge cases |
+| 5 | Expired checkouts self-recover | Users are never permanently stuck — a background job runs every minute to clean up, with inline recovery as a safety net |
+| 6 | Concurrent requests are safe | Multiple requests hitting the same cart or stock simultaneously are handled gracefully — no data corruption, no overselling |
 
 ---
 
-## 🚨 Error Handling
-
+## Error Handling
 All errors — validation, business rules, or unexpected failures — return the same consistent response shape. No surprises for the client.
 
 ---
 
-## 🧪 Tests
-
+## Tests
 Tests run automatically as part of the build. A real PostgreSQL instance is spun up via Testcontainers — no manual setup needed.
 
 ```bash
 mvn clean install
 ```
+
+---
+
+## CI
+[![CI](https://github.com/RadmanHi/shop/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/RadmanHi/shop/actions/workflows/ci.yml)
+
+GitHub Actions runs on every push and pull request — compiles the code, runs the full test suite including Testcontainers integration tests, and packages the artifact.
