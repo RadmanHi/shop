@@ -66,12 +66,12 @@ All values have sensible defaults for local development.
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/v1/cart` | Get current cart |
-| POST | `/api/v1/cart/items` | Add item |
-| PATCH | `/api/v1/cart/items/{productId}` | Update quantity |
-| DELETE | `/api/v1/cart/items/{productId}` | Remove item |
-| POST | `/api/v1/cart/checkout` | Initiate checkout |
-| POST | `/api/v1/cart/payment-result` | Submit payment result ⚠️ internal use only |
+| GET | `/api/v1/carts` | Get current cart |
+| POST | `/api/v1/carts/items` | Add item |
+| PATCH | `/api/v1/carts/items/{productId}` | Update quantity |
+| DELETE | `/api/v1/carts/items/{productId}` | Remove item |
+| POST | `/api/v1/carts/checkout` | Initiate checkout |
+| POST | `/api/v1/carts/payment-result` | Submit payment result ⚠️ internal use only |
 
 ---
 
