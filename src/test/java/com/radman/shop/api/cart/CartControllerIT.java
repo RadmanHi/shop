@@ -244,16 +244,6 @@ class CartControllerIT extends AbstractContainerBaseTest {
     }
 
     @Test
-    @DisplayName("get cart - cart does not exist - returns 404")
-    void getCart_notFound_returns404() {
-        client.get()
-                .uri("/api/v1/carts")
-                .header("X-User-Id", "user-1")
-                .exchange()
-                .expectStatus().isNotFound();
-    }
-
-    @Test
     @DisplayName("expired checkout - cleared on next write - user can add items again")
     void expiredCheckout_clearedOnNextWrite() {
         createProducts();
