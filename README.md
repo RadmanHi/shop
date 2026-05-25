@@ -2,7 +2,7 @@
 
 A backend service simulating a real-world e-commerce cart system, built with Spring Boot and PostgreSQL.
 
-> 📦 **GitHub:** [RadmanHi/shop](https://github.com/RadmanHi/shop/tree/develop) — source code is on the `develop` branch
+> ### 🔗 Full source code available on the [`develop`](https://github.com/RadmanHi/shop/tree/develop) branch
 
 ---
 
