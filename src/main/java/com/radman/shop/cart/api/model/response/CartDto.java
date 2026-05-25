@@ -1,4 +1,4 @@
-package com.radman.shop.cart.api.model;
+package com.radman.shop.cart.api.model.response;
 
 import com.radman.shop.cart.model.CheckoutState;
 

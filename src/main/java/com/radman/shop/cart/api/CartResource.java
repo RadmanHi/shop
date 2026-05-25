@@ -1,10 +1,10 @@
 package com.radman.shop.cart.api;
 
 import com.radman.shop.cart.api.mapper.CartResourceMapper;
-import com.radman.shop.cart.api.model.AddItemRequest;
-import com.radman.shop.cart.api.model.CartResponse;
-import com.radman.shop.cart.api.model.PaymentResultRequest;
-import com.radman.shop.cart.api.model.UpdateItemQuantityRequest;
+import com.radman.shop.cart.api.model.request.AddItemRequest;
+import com.radman.shop.cart.api.model.response.CartResponse;
+import com.radman.shop.cart.api.model.request.PaymentResultRequest;
+import com.radman.shop.cart.api.model.request.UpdateItemQuantityRequest;
 import com.radman.shop.cart.api.model.response.CheckoutResponse;
 import com.radman.shop.cart.service.CartService;
 import com.radman.shop.common.GeneralResponse;

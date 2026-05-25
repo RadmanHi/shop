@@ -1,9 +1,9 @@
 package com.radman.shop.cart.api.mapper;
 
-import com.radman.shop.cart.api.model.*;
-import com.radman.shop.cart.api.model.response.CheckoutDto;
-import com.radman.shop.cart.api.model.response.CheckoutItemDto;
-import com.radman.shop.cart.api.model.response.CheckoutResponse;
+import com.radman.shop.cart.api.model.request.AddItemRequest;
+import com.radman.shop.cart.api.model.request.PaymentResultRequest;
+import com.radman.shop.cart.api.model.request.UpdateItemQuantityRequest;
+import com.radman.shop.cart.api.model.response.*;
 import com.radman.shop.cart.service.model.*;
 import com.radman.shop.common.ResultStatus;
 import org.mapstruct.Mapper;

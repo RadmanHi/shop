@@ -1,4 +1,4 @@
-package com.radman.shop.cart.api.model;
+package com.radman.shop.cart.api.model.request;
 
 import com.radman.shop.cart.service.model.PaymentStatus;
 import jakarta.validation.constraints.NotNull;
