@@ -8,6 +8,7 @@ import com.radman.shop.product.api.model.response.ProductResponse;
 import com.radman.shop.product.service.ProductService;
 import com.radman.shop.product.service.model.ProductResult;
 import com.radman.shop.product.service.model.ProductsResult;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Products")
 @Slf4j
 @Validated
 @RestController
