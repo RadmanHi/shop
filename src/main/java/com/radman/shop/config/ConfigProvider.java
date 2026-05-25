@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
+import java.time.Duration;
+
 @RequiredArgsConstructor
 @Configuration
 public class ConfigProvider {
@@ -13,4 +15,9 @@ public class ConfigProvider {
         return env.getRequiredProperty("scheduled.expire.stale.checkout.enabled", Boolean.class);
     }
 
+    public Duration getCheckoutTimeout() {
+        return Duration.ofMinutes(
+                env.getRequiredProperty("cart.checkout.timeout.minutes", Long.class)
+        );
+    }
 }

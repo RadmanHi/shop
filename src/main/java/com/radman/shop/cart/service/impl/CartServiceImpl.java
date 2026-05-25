@@ -8,6 +8,7 @@ import com.radman.shop.cart.service.CartService;
 import com.radman.shop.cart.service.mapper.CartServiceMapper;
 import com.radman.shop.cart.service.model.*;
 import com.radman.shop.common.exception.*;
+import com.radman.shop.config.ConfigProvider;
 import com.radman.shop.product.service.ProductService;
 import com.radman.shop.product.service.model.ProductPriceDto;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -27,11 +27,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
 
-    private static final Duration CHECKOUT_TIMEOUT = Duration.ofMinutes(30);
-
     private final CartDao cartDao;
     private final ProductService productService;
     private final CartServiceMapper mapper;
+    private final ConfigProvider configProvider;
 
     @Override
     @Transactional(readOnly = true)
@@ -175,7 +174,7 @@ public class CartServiceImpl implements CartService {
                     .orElseThrow(() -> new ProductNotFoundException(item.getProductId())));
         }
         cart.setCheckoutState(CheckoutState.CHECKOUT_IN_PROGRESS);
-        cart.setCheckoutExpiresAt(Instant.now().plus(CHECKOUT_TIMEOUT));
+        cart.setCheckoutExpiresAt(Instant.now().plus(configProvider.getCheckoutTimeout()));
     }
 
     private void clearCheckout(Cart cart) {
