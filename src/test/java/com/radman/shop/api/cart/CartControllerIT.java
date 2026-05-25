@@ -140,6 +140,30 @@ class CartControllerIT extends AbstractContainerBaseTest {
         CartResponse response = getCart("user-1");
         assertEquals(CheckoutState.CHECKOUT_IN_PROGRESS, response.getCart().checkoutState());
     }
+    @Test
+    @DisplayName("addItem - existing item - stock check uses summed quantity")
+    void addItem_existingItem_sumsQuantityBeforeStockCheck() {
+        createProducts();
+        addItem("user-1", "product-1", 4);
+
+        addItem("user-1", "product-1", 3);
+
+        CartResponse cart = getCart("user-1");
+        assertEquals(1, cart.getCart().items().size());
+        assertEquals(7, cart.getCart().items().getFirst().quantity());
+    }
+
+    @Test
+    @DisplayName("addItem - new item - added to cart")
+    void addItem_newItem_success() {
+        createProducts();
+
+        addItem("user-1", "product-1", 3);
+
+        CartResponse cart = getCart("user-1");
+        assertEquals(1, cart.getCart().items().size());
+        assertEquals(3, cart.getCart().items().getFirst().quantity());
+    }
 
     @Test
     @DisplayName("add item - insufficient stock - request rejected")

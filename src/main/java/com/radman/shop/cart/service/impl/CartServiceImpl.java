@@ -47,21 +47,22 @@ public class CartServiceImpl implements CartService {
 
         Cart cart = getOrCreateCartForUpdate(model.userId());
         ensureNotInCheckout(cart, model.userId());
-        productService.ensureSufficientStock(model.productId(), model.quantity());
 
-        cart.getItems().stream()
+        Optional<CartItem> existing = cart.getItems().stream()
                 .filter(i -> i.getProductId().equals(model.productId()))
-                .findFirst()
-                .ifPresentOrElse(
-                        i -> i.setQuantity(i.getQuantity() + model.quantity()),
-                        () -> cart.getItems().add(mapper.toCartItem(cart, model.productId(), model.quantity()))
-                );
+                .findFirst();
+
+        int newQuantity = existing.map(i -> i.getQuantity() + model.quantity()).orElse(model.quantity());
+        productService.ensureSufficientStock(model.productId(), newQuantity);
+
+        existing.ifPresentOrElse(
+                i -> i.setQuantity(newQuantity),
+                () -> cart.getItems().add(mapper.toCartItem(cart, model.productId(), model.quantity()))
+        );
 
         cartDao.save(cart);
-
         log.info("Item added. userId={}, productId={}", model.userId(), model.productId());
     }
-
 
     @Override
     @Transactional
