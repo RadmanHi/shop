@@ -88,6 +88,32 @@ Add Items → Initiate Checkout → [Payment Service — out of scope] → PURCH
 
 ---
 
+## Design Goals
+
+| Concern | Solution |
+|---|---|
+| Price consistency | Snapshot at checkout time |
+| Stock integrity | Reserved quantity tracking |
+| Overselling prevention | Pessimistic locking |
+| Failure recovery | Scheduler + inline expiration fallback |
+| External resilience | Idempotent callback handling |
+
+---
+
+## Important Behaviors
+
+Expired checkouts are handled through multiple safety mechanisms:
+
+- Background cleanup job (periodic reconciliation of expired `CHECKOUT_IN_PROGRESS` carts)
+- Inline request-time recovery fallback (lazy expiration during user interactions)
+- External payment event reconciliation (future/async payment service callbacks may trigger late or out-of-order status updates)
+
+Stock is never permanently reserved due to these layered recovery mechanisms.
+
+Payment callbacks are retry-safe and assume at-least-once delivery from external systems.
+
+---
+
 ## Error Handling
 All errors — validation, business rules, or unexpected failures — return the same consistent response shape. No surprises for the client.
 
