@@ -45,7 +45,7 @@ public class CartResource {
 
     @PatchMapping(path = "/items/{productId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GeneralResponse> updateItemQuantity(@RequestHeader("X-User-Id") String userId,
-                                                              @PathVariable String productId, @RequestBody @Valid UpdateItemQuantityRequest request) throws BusinessException {
+             @PathVariable String productId, @RequestBody @Valid UpdateItemQuantityRequest request) throws BusinessException {
         log.info("Updating item quantity. userId={}, productId={}", userId, productId);
         cartService.updateItemQuantity(mapper.toUpdateItemQuantityModel(userId, productId, request));
         return ResponseEntity.ok(GeneralResponse.success());
@@ -61,8 +61,7 @@ public class CartResource {
 
     @Operation(summary = "Checkout cart", description = "Starts checkout flow for current user cart")
     @PostMapping(path = "/checkout", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GeneralResponse> checkout(
-            @RequestHeader("X-User-Id") String userId) throws BusinessException {
+    public ResponseEntity<GeneralResponse> checkout(@RequestHeader("X-User-Id") String userId) throws BusinessException {
         log.info("Checkout requested. userId={}", userId);
         cartService.initiateCheckout(userId);
         return ResponseEntity.ok(GeneralResponse.success());

@@ -1,7 +1,5 @@
 package com.radman.shop.product.service.mapper;
 
-import com.radman.shop.cart.model.CartItem;
-import com.radman.shop.product.api.model.response.ProductDto;
 import com.radman.shop.product.model.Product;
 import com.radman.shop.product.service.model.*;
 import org.mapstruct.Mapper;
@@ -40,13 +38,5 @@ public interface ProductServiceMapper {
 
     default ProductPricesResult toPricesResult(List<Product> products) {
         return new ProductPricesResult(toPriceDtos(products));
-    }
-
-    ProductQuantityDto toProductQuantityDto(CartItem item);
-
-    List<ProductQuantityDto> toProductQuantityDtoList(List<CartItem> items);
-
-    default UpdateProductStockModel toStockModel(List<CartItem> items) {
-        return new UpdateProductStockModel(toProductQuantityDtoList(items));
     }
 }

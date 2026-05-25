@@ -133,10 +133,8 @@ public class ProductServiceImpl implements ProductService {
         return productDao.findById(productId).orElseThrow(() -> new ProductNotFoundException(productId));
     }
 
-    private void ensureAllProductsExist(Set<String> requestedIds, List<Product> products)
-            throws BusinessException {
+    private void ensureAllProductsExist(Set<String> requestedIds, List<Product> products) throws BusinessException {
         Set<String> foundIds = products.stream().map(Product::getId).collect(Collectors.toSet());
-
         for (String id : requestedIds) {
             if (!foundIds.contains(id)) {
                 throw new ProductNotFoundException(id);

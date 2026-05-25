@@ -129,9 +129,7 @@ public class CartServiceImpl implements CartService {
                             Processing anyway to avoid stock leak.
                             userId={}, status={}, cartState={}
                             """,
-                    model.userId(),
-                    model.status(),
-                    cart.getCheckoutState()
+                    model.userId(), model.status(), cart.getCheckoutState()
             );
         }
         switch (model.status()) {

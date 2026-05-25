@@ -12,8 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
 import java.math.BigDecimal;
@@ -217,7 +215,7 @@ class CartControllerIT extends AbstractContainerBaseTest {
 
         addItem("user-1", "product-1", 1);
 
-        UpdateItemQuantityRequest req = new UpdateItemQuantityRequest();;
+        UpdateItemQuantityRequest req = new UpdateItemQuantityRequest();
         req.setQuantity(10);
 
         client.patch()
