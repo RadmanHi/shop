@@ -51,6 +51,15 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public void ensureSufficientStock(String productId, int quantity) throws BusinessException {
+        Product product = findProduct(productId);
+        int available = product.getTotalQuantity() - product.getReservedQuantity();
+        if (available < quantity)
+            throw new InsufficientStockException(productId, quantity, available);
+    }
+
+    @Override
     @Transactional
     public void reserveProducts(UpdateProductStockModel model) throws BusinessException {
         log.info("Reserve products request. size={}", model.products().size());

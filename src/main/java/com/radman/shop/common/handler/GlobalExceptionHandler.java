@@ -27,37 +27,78 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public final ResponseEntity<ResponseService> handleBusinessException(BusinessException ex, WebRequest request) {
         logger.error("business exception occurred", ex);
-        return ResponseEntity.unprocessableEntity().body(new GeneralResponse(ex.getResultStatus()));
+
+        return ResponseEntity
+                .status(resolveStatus(ex.getResultStatus()))
+                .body(new GeneralResponse(ex.getResultStatus()));
     }
 
     @ExceptionHandler(InvalidParameterException.class)
     public final ResponseEntity<ResponseService> handleInvalidParameterException(InvalidParameterException ex) {
         logger.error("invalid param error", ex);
-        return ResponseEntity.unprocessableEntity().body(new GeneralResponse(ResultStatus.INVALID_PARAMETER));
+
+        return ResponseEntity
+                .unprocessableEntity()
+                .body(new GeneralResponse(ResultStatus.INVALID_PARAMETER));
     }
 
     @ExceptionHandler(UnsupportedOperationException.class)
-    public final ResponseEntity<ResponseService> handleUnsupportedOperationException(UnsupportedOperationException ex) {
+    public final ResponseEntity<ResponseService> handleUnsupportedOperationException(
+            UnsupportedOperationException ex
+    ) {
+
         logger.error(ResultStatus.FORBIDDEN_REQUEST.getDescription(), ex);
-        return new ResponseEntity<>(new GeneralResponse(ResultStatus.FORBIDDEN_REQUEST), HttpStatus.FORBIDDEN);
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(new GeneralResponse(ResultStatus.FORBIDDEN_REQUEST));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public final ResponseEntity<ResponseService> HandleConstraintViolationException(ConstraintViolationException ex) {
-        logger.warn("constraint violation exception ", ex);
+    public final ResponseEntity<ResponseService> handleConstraintViolationException(
+            ConstraintViolationException ex
+    ) {
+
+        logger.warn("constraint violation exception", ex);
+
         var response = new GeneralResponse(ResultStatus.INVALID_PARAMETER);
+
         ex.getConstraintViolations()
                 .stream()
                 .findFirst()
-                .ifPresent(violation -> response.setResult(ResultStatus.INVALID_PARAMETER,
-                        environment.getProperty(violation.getMessage())));
-        return ResponseEntity.unprocessableEntity().body(response);
+                .ifPresent(violation ->
+                        response.setResult(
+                                ResultStatus.INVALID_PARAMETER,
+                                environment.getProperty(violation.getMessage())
+                        )
+                );
+
+        return ResponseEntity
+                .unprocessableEntity()
+                .body(response);
     }
 
     @ExceptionHandler(Throwable.class)
-    public final ResponseEntity<ResponseService> handleGeneralException(Throwable throwable) {
+    public final ResponseEntity<ResponseService> handleGeneralException(
+            Throwable throwable
+    ) {
+
         logger.error(ResultStatus.UNKNOWN.getDescription(), throwable);
-        return new ResponseEntity<>(new GeneralResponse(ResultStatus.UNKNOWN), HttpStatus.UNPROCESSABLE_ENTITY);
+
+        return ResponseEntity.unprocessableEntity().body(new GeneralResponse(ResultStatus.UNKNOWN));
     }
 
+    private HttpStatus resolveStatus(ResultStatus resultStatus) {
+
+        return switch (resultStatus) {
+
+            case CART_NOT_FOUND, PRODUCT_NOT_FOUND, CART_ITEM_NOT_FOUND -> HttpStatus.NOT_FOUND;
+
+            case DUPLICATE_PRODUCT -> HttpStatus.CONFLICT;
+
+            case FORBIDDEN_REQUEST -> HttpStatus.FORBIDDEN;
+
+            default -> HttpStatus.UNPROCESSABLE_ENTITY;
+        };
+    }
 }

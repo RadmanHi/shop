@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -45,8 +46,8 @@ public class CartServiceImpl implements CartService {
 
         Cart cart = cartDao.findByUserId(model.userId()).orElseGet(() -> mapper.toCart(model.userId()));
         ensureNotInCheckout(cart, model.userId());
+        productService.ensureSufficientStock(model.productId(), model.quantity());
 
-        productService.getProduct(model.productId());
         cart.getItems().stream()
                 .filter(i -> i.getProductId().equals(model.productId()))
                 .findFirst()
@@ -65,7 +66,10 @@ public class CartServiceImpl implements CartService {
 
         Cart cart = findCartForUpdate(model.userId());
         ensureNotInCheckout(cart, model.userId());
-        findItem(cart, model.productId()).setQuantity(model.quantity());
+        productService.ensureSufficientStock(model.productId(), model.quantity());
+
+        findItem(cart, model.productId())
+                .setQuantity(model.quantity());
         cartDao.save(cart);
 
         log.info("Item quantity updated. userId={}, productId={}", model.userId(), model.productId());
@@ -101,12 +105,7 @@ public class CartServiceImpl implements CartService {
 
         createPriceSnapshots(cart);
         cartDao.save(cart);
-
-        try {
-            productService.reserveProducts(mapper.toStockModel(cart.getItems()));
-        } catch (Exception e) {
-            log.warn("Reserve failed, product must self-heal. userId={}", userId, e);
-        }
+        productService.reserveProducts(mapper.toStockModel(cart.getItems()));
         /*
          * Planned payment flow:
          *     paymentService.charge(calculateTotal(cart), userId);
@@ -124,44 +123,59 @@ public class CartServiceImpl implements CartService {
         log.info("Handling payment result. userId={}, status={}", model.userId(), model.status());
 
         Cart cart = findCartForUpdate(model.userId());
-
-        if (cart.getCheckoutState() != CheckoutState.CHECKOUT_IN_PROGRESS) {
-            log.warn("Cart not in checkout, ignoring. userId={}", model.userId());
-            return;
+        boolean wasInCheckout = cart.getCheckoutState() == CheckoutState.CHECKOUT_IN_PROGRESS;
+        if (!wasInCheckout) {
+            log.warn("""
+                            [ANOMALY] Payment result received for cart not in checkout.
+                            Processing anyway to avoid stock leak.
+                            userId={}, status={}, cartState={}
+                            """,
+                    model.userId(),
+                    model.status(),
+                    cart.getCheckoutState()
+            );
         }
-
         switch (model.status()) {
             case PURCHASED -> {
-                try {
-                    productService.fulfillProducts(mapper.toStockModel(cart.getItems()));
-                } catch (Exception e) {
-                    log.warn("Fulfill failed, product will self-heal. userId={}", model.userId(), e);
-                }
+                if (wasInCheckout) fulfillSilently(cart, model.userId());
                 cart.getItems().clear();
                 clearCheckout(cart);
             }
             case CANCELLED, TIMEOUT -> {
-                try {
-                    productService.releaseProducts(mapper.toStockModel(cart.getItems()));
-                } catch (Exception e) {
-                    log.warn("Release failed, product will self-heal. userId={}", model.userId(), e);
-                }
+                if (wasInCheckout) releaseSilently(cart, model.userId());
                 clearCheckout(cart);
             }
         }
         cartDao.save(cart);
-
         log.info("Payment result handled. userId={}, status={}", model.userId(), model.status());
+    }
+
+    private void fulfillSilently(Cart cart, String userId) {
+        try {
+            productService.fulfillProducts(mapper.toStockModel(cart.getItems()));
+        } catch (Exception e) {
+            log.warn("Fulfill failed, product will self-heal. userId={}", userId, e);
+        }
+    }
+
+    private void releaseSilently(Cart cart, String userId) {
+        try {
+            productService.releaseProducts(mapper.toStockModel(cart.getItems()));
+        } catch (Exception e) {
+            log.warn("Release failed, product will self-heal. userId={}", userId, e);
+        }
     }
 
     private void createPriceSnapshots(Cart cart) throws BusinessException {
         Map<String, BigDecimal> prices = productService
                 .getPricesByProductIds(cart.getItems().stream().map(CartItem::getProductId).toList()).prices().stream()
                 .collect(Collectors.toMap(ProductPriceDto::productId, ProductPriceDto::price));
-
+        for (CartItem item : cart.getItems()) {
+            item.setCheckoutPriceSnapshot(Optional.ofNullable(prices.get(item.getProductId()))
+                    .orElseThrow(() -> new ProductNotFoundException(item.getProductId())));
+        }
         cart.setCheckoutState(CheckoutState.CHECKOUT_IN_PROGRESS);
         cart.setCheckoutExpiresAt(Instant.now().plus(CHECKOUT_TIMEOUT));
-        cart.getItems().forEach(item -> item.setCheckoutPriceSnapshot(prices.get(item.getProductId())));
     }
 
     private void clearCheckout(Cart cart) {
@@ -172,8 +186,17 @@ public class CartServiceImpl implements CartService {
 
 
     private void ensureNotInCheckout(Cart cart, String userId) throws CartAlreadyInCheckoutException {
-        if (cart.getCheckoutState() == CheckoutState.CHECKOUT_IN_PROGRESS)
+        boolean isInCheckout = cart.getCheckoutState() == CheckoutState.CHECKOUT_IN_PROGRESS;
+        boolean isExpired = cart.getCheckoutExpiresAt() != null && Instant.now().isAfter(cart.getCheckoutExpiresAt());
+        if (isInCheckout && isExpired) {
+            log.info("Checkout expired at read time, clearing. userId={}", userId);
+            clearCheckout(cart);
+            cartDao.save(cart);
+            return;
+        }
+        if (isInCheckout) {
             throw new CartAlreadyInCheckoutException(userId);
+        }
     }
 
     private CartItem findItem(Cart cart, String productId) throws CartItemNotFoundException {

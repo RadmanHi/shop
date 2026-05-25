@@ -17,6 +17,8 @@ public interface ProductService {
 
     ProductPricesResult getPricesByProductIds(List<String> productIds) throws BusinessException;
 
+    void ensureSufficientStock(String productId, int quantity) throws BusinessException;
+
     void reserveProducts(UpdateProductStockModel model) throws BusinessException;
 
     void releaseProducts(UpdateProductStockModel model) throws BusinessException;
