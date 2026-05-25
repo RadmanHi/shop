@@ -26,8 +26,6 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductsResult getAllProducts(Integer page, Integer size) {
-        log.info("Fetching products. page={}, size={}", page, size);
-
         PageRequest pageRequest = PageRequest.of(page, size);
         return mapper.toProductsResult(productDao.findAll(pageRequest));
     }
@@ -41,12 +39,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductPricesResult getPricesByProductIds(List<String> productIds) throws BusinessException {
-        log.info("Fetching prices. size={}", productIds.size());
-
         List<Product> products = productDao.findAllById(productIds);
         ensureAllProductsExist(new HashSet<>(productIds), products);
-
-        log.info("Fetched prices. size={}", products.size());
         return mapper.toPricesResult(products);
     }
 
@@ -109,20 +103,14 @@ public class ProductServiceImpl implements ProductService {
 
     private void updateStock(UpdateProductStockModel model, StockOperation operation) throws BusinessException {
         Map<String, Integer> quantityByProductId = model.products().stream()
-                .collect(Collectors.toMap(
-                        ProductQuantityDto::productId,
-                        ProductQuantityDto::quantity,
-                        Integer::sum
-                ));
+                .collect(Collectors.toMap(ProductQuantityDto::productId, ProductQuantityDto::quantity, Integer::sum));
 
         List<Product> productsForUpdate = productDao.findAllForUpdate(quantityByProductId.keySet());
-
         ensureAllProductsExist(quantityByProductId.keySet(), productsForUpdate);
 
         for (Product product : productsForUpdate) {
             Integer requestedQuantity = quantityByProductId.get(product.getId());
             ensureValidQuantity(requestedQuantity);
-
             operation.apply(product, requestedQuantity);
         }
 
@@ -135,11 +123,8 @@ public class ProductServiceImpl implements ProductService {
 
     private void ensureAllProductsExist(Set<String> requestedIds, List<Product> products) throws BusinessException {
         Set<String> foundIds = products.stream().map(Product::getId).collect(Collectors.toSet());
-        for (String id : requestedIds) {
-            if (!foundIds.contains(id)) {
-                throw new ProductNotFoundException(id);
-            }
-        }
+        String missingId = requestedIds.stream().filter(id -> !foundIds.contains(id)).findFirst().orElse(null);
+        if (missingId != null) throw new ProductNotFoundException(missingId);
     }
 
     private void ensureValidQuantity(Integer quantity) throws BusinessException {
